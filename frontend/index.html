@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SIGNSENSE | Sign Language Recognition</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        header h1 {
+            font-size: 36px;
+            color: #38bdf8;
+        }
+
+        header p {
+            color: #94a3b8;
+            margin-top: 10px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 22px;
+            border-radius: 15px;
+        }
+
+        video {
+            display: block;
+            width: 100%;
+            background: black;
+            border-radius: 12px;
+            transform: scaleX(-1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #startBtn {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        #stopBtn {
+            background: #ef4444;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            color: #94a3b8;
+        }
+
+        #connectionStatus {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .prediction {
+            text-align: center;
+        }
+
+        .prediction h2 {
+            color: #94a3b8;
+            font-size: 18px;
+        }
+
+        #predictedAction {
+            font-size: 32px;
+            color: #38bdf8;
+            margin: 25px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .confidence {
+            font-size: 18px;
+            color: #cbd5e1;
+        }
+
+        .sentence {
+            margin-top: 30px;
+            padding: 18px;
+            background: #0f172a;
+            border-radius: 10px;
+        }
+
+        .sentence p {
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+
+        #sentenceText {
+            font-size: 20px;
+            color: #38bdf8;
+            overflow-wrap: anywhere;
+        }
+
+        .error {
+            color: #f87171;
+            margin-top: 15px;
+            overflow-wrap: anywhere;
+        }
+
+        .instructions {
+            grid-column: 1 / -1;
+        }
+
+        .instructions h2 {
+            color: #38bdf8;
+            margin-bottom: 8px;
+        }
+
+        .instructions .intro {
+            color: #94a3b8;
+            margin-bottom: 18px;
+            line-height: 1.5;
+        }
+
+        .instruction-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 14px;
+        }
+
+        .instruction-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .instruction-item h3 {
+            color: #38bdf8;
+            font-size: 17px;
+            margin-bottom: 9px;
+        }
+
+        .instruction-item p {
+            color: #cbd5e1;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .instruction-item .step {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 750px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 29px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <header>
+        <h1>SIGNSENSE</h1>
+        <p>Real-Time Sign Language Recognition Using LSTM</p>
+    </header>
+
+    <main class="container">
+
+        <!-- Webcam section -->
+        <section class="card">
+
+            <video id="video" autoplay playsinline muted></video>
+
+            <div class="controls">
+
+                <button id="startBtn">
+                    Start Recognition
+                </button>
+
+                <button id="stopBtn" disabled>
+                    Stop
+                </button>
+
+            </div>
+
+            <div class="status">
+                Connection:
+                <span id="connectionStatus">Disconnected</span>
+            </div>
+
+            <div id="errorMessage" class="error"></div>
+
+        </section>
+
+
+        <!-- Prediction section -->
+        <section class="card prediction">
+
+            <h2>Detected Sign</h2>
+
+            <div id="predictedAction">
+                Waiting...
+            </div>
+
+            <div class="confidence">
+                Confidence:
+                <span id="confidence">0%</span>
+            </div>
+
+            <div class="sentence">
+
+                <p>Recognized Sentence</p>
+
+                <div id="sentenceText">
+                    ---
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Instructions for the five custom trained gestures -->
+        <section class="card instructions">
+            <h2>How to Perform Each Sign</h2>
+            <p class="intro">
+                Follow the same movement you used while recording the training data.
+                Keep your upper body and hands visible in the camera.
+            </p>
+
+            <div class="instruction-grid">
+                <article class="instruction-item">
+                    <h3>1. Hi</h3>
+                    <p>Raise one hand and wave it toward the camera.</p>
+                    <p class="step">Tip: Make a clear, repeated waving movement.</p>
+                </article>
+
+                <article class="instruction-item">
+                    <h3>2. How are you?</h3>
+                    <p>Turn your hand upside down and wave it horizontally.</p>
+                    <p class="step">Tip: Keep the hand orientation and horizontal movement consistent.</p>
+                </article>
+
+                <article class="instruction-item">
+                    <h3>3. I am fine</h3>
+                    <p>Raise your hand and make a clear thumbs-up gesture.</p>
+                    <p class="step">Tip: Hold the thumbs-up steadily so the camera can capture it.</p>
+                </article>
+
+                <article class="instruction-item">
+                    <h3>4. Thankyou</h3>
+                    <p>Perform the hand-to-forehead gesture you used when collecting this sign's training examples.</p>
+                    <p class="step">Tip: Repeat the same movement and hand position used during training.</p>
+                </article>
+
+                <article class="instruction-item">
+                    <h3>5. Great</h3>
+                    <p>Raise your hand to your forehead and perform a salute.</p>
+                    <p class="step">Tip: Make the salute clearly and hold it briefly.</p>
+                </article>
+            </div>
+            <p class="intro" style="margin-top: 16px; margin-bottom: 0;">
+                These are the custom gestures used to train this SIGNSENSE model;
+                they are not presented as standardized sign-language definitions.
+            </p>
+        </section>
+
+    </main>
+
+
+    <!-- Canvas for capturing frames -->
+    <canvas id="canvas" width="640" height="480" hidden>
+    </canvas>
+
+
+    <script>
+
+        const video = document.getElementById("video");
+
+        const canvas = document.getElementById("canvas");
+
+        const ctx = canvas.getContext("2d");
+
+        const startBtn = document.getElementById("startBtn");
+
+        const stopBtn = document.getElementById("stopBtn");
+
+        const connectionStatus =
+            document.getElementById("connectionStatus");
+
+        const predictedAction =
+            document.getElementById("predictedAction");
+
+        const confidence =
+            document.getElementById("confidence");
+
+        const sentenceText =
+            document.getElementById("sentenceText");
+
+        const errorMessage =
+            document.getElementById("errorMessage");
+
+
+        let socket = null;
+
+        let cameraStream = null;
+
+        let frameTimer = null;
+
+        let waitingForResponse = false;
+
+
+        // Start webcam and WebSocket
+        async function startRecognition() {
+
+            try {
+
+                errorMessage.textContent = "";
+
+                predictedAction.textContent = "Starting...";
+
+                // Request webcam access
+                cameraStream =
+                    await navigator.mediaDevices.getUserMedia({
+
+                        video: {
+                            width: 640,
+                            height: 480
+                        },
+
+                        audio: false
+
+                    });
+
+                video.srcObject = cameraStream;
+
+                await video.play();
+
+
+                // Choose WebSocket protocol
+                const protocol =
+                    window.location.protocol === "https:"
+                        ? "wss:"
+                        : "ws:";
+
+
+                // Connect to FastAPI
+                const wsUrl =
+                    `${protocol}//${window.location.host}/ws/sign/`;
+
+                socket = new WebSocket(wsUrl);
+
+
+                socket.onopen = () => {
+
+                    console.log("WebSocket connected");
+
+                    connectionStatus.textContent = "Connected";
+
+                    connectionStatus.style.color = "#22c55e";
+
+                    startBtn.disabled = true;
+
+                    stopBtn.disabled = false;
+
+
+                    // Send frames every 100 milliseconds
+                    frameTimer = setInterval(sendFrame, 100);
+
+                };
+
+
+                // Receive prediction from backend
+                socket.onmessage = (event) => {
+
+                    waitingForResponse = false;
+
+                    const result = JSON.parse(event.data);
+
+                    console.log("Prediction probabilities:", result.probabilities);
+
+
+                    if (result.error) {
+
+                        errorMessage.textContent = result.error;
+
+                        return;
+                    }
+
+
+                    if (!result.ready) {
+
+                        predictedAction.textContent =
+                            "Collecting frames...";
+
+                        confidence.textContent = "0%";
+
+                        return;
+                    }
+
+
+                    predictedAction.textContent =
+                        result.predicted_action || "Unknown";
+
+
+                    confidence.textContent =
+                        (
+                            (result.confidence || 0) * 100
+                        ).toFixed(2) + "%";
+
+
+                    sentenceText.textContent =
+                        (result.sentence || []).join(" ");
+
+                };
+
+
+                socket.onerror = (error) => {
+
+                    console.error("WebSocket error:", error);
+
+                    errorMessage.textContent =
+                        "WebSocket connection error";
+
+                };
+
+
+                socket.onclose = () => {
+
+                    console.log("WebSocket disconnected");
+
+                    stopRecognition();
+
+                };
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                errorMessage.textContent = error.message;
+
+                stopRecognition();
+
+            }
+
+        }
+
+
+        // Capture and send webcam frame
+        function sendFrame() {
+
+            if (
+                !socket ||
+                socket.readyState !== WebSocket.OPEN ||
+                waitingForResponse
+            ) {
+
+                return;
+            }
+
+
+            if (video.readyState < 2) {
+
+                return;
+            }
+
+
+            // Draw webcam frame onto canvas
+            ctx.drawImage(
+
+                video,
+
+                0,
+
+                0,
+
+                canvas.width,
+
+                canvas.height
+
+            );
+
+
+            waitingForResponse = true;
+
+
+            // Convert canvas frame into JPEG Blob
+            canvas.toBlob((blob) => {
+
+                if (
+                    !blob ||
+                    !socket ||
+                    socket.readyState !== WebSocket.OPEN
+                ) {
+
+                    waitingForResponse = false;
+
+                    return;
+                }
+
+
+                // Send JPEG bytes to FastAPI
+                socket.send(blob);
+
+            }, "image/jpeg", 0.8);
+
+        }
+
+
+        // Stop recognition and release resources
+        function stopRecognition() {
+
+
+            if (frameTimer) {
+
+                clearInterval(frameTimer);
+
+                frameTimer = null;
+
+            }
+
+
+            if (socket) {
+
+                const currentSocket = socket;
+
+                socket = null;
+
+                if (
+                    currentSocket.readyState === WebSocket.OPEN ||
+                    currentSocket.readyState === WebSocket.CONNECTING
+                ) {
+
+                    currentSocket.close();
+
+                }
+
+            }
+
+
+            if (cameraStream) {
+
+                cameraStream.getTracks().forEach(track => {
+
+                    track.stop();
+
+                });
+
+                cameraStream = null;
+
+            }
+
+
+            video.srcObject = null;
+
+            waitingForResponse = false;
+
+
+            connectionStatus.textContent = "Disconnected";
+
+            connectionStatus.style.color = "#fbbf24";
+
+            predictedAction.textContent = "Waiting...";
+
+            confidence.textContent = "0%";
+
+            sentenceText.textContent = "---";
+
+
+            startBtn.disabled = false;
+
+            stopBtn.disabled = true;
+
+        }
+
+
+        // Button events
+        startBtn.addEventListener(
+            "click",
+            startRecognition
+        );
+
+        stopBtn.addEventListener(
+            "click",
+            stopRecognition
+        );
+
+
+    </script>
+
+</body>
+
+</html>

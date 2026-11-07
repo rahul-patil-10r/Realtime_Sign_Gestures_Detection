@@ -1,0 +1,32 @@
+# SIGNSENSE - runtime, training, inference, and development dependencies
+# Recommended Python: 3.11
+#
+# Install:
+#   python -m pip install -r requirements.txt
+#
+# These are compatible version ranges, not a record of the exact versions
+# currently installed in your development environment.
+
+# Core numerical / computer vision
+numpy>=1.26,<2.0
+opencv-python>=4.8,<5.0
+mediapipe>=0.10.14,<0.11
+
+# Deep learning
+tensorflow>=2.15,<2.17
+h5py>=3.10,<4.0
+tensorboard>=2.15,<2.17
+
+# API and WebSocket server
+fastapi>=0.110,<1.0
+uvicorn[standard]>=0.27,<1.0
+
+# Model training and notebook utilities
+scikit-learn>=1.4,<2.0
+matplotlib>=3.8,<4.0
+pandas>=2.1,<3.0
+jupyter>=1.0,<2.0
+ipykernel>=6.29,<7.0
+
+# Testing
+pytest>=8.0,<10.0

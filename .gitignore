@@ -1,0 +1,29 @@
+# Virtual environments
+.venv/
+venv/
+ara/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Mac
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+
+# Environment variables
+.env
+
+# Temporary files
+*.tmp
